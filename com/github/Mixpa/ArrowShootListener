@@ -1,0 +1,100 @@
+package com.github.Mixpa;
+
+import java.util.Random;
+
+import org.bukkit.Material;
+//import org.bukkit.command.CommandException;
+import org.bukkit.entity.Arrow;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.ProjectileHitEvent;
+
+public class ArrowShootListener implements Listener{
+	private SuperArrowPlugin plugin;
+	private Random rnd;
+	private int removeChance;
+	private int dropChance;
+	private int obsidianChance;
+	private boolean isguardworking;
+	public ArrowShootListener (SuperArrowPlugin plugin){
+		this.plugin = plugin;
+		this.rnd = new Random();
+		isguardworking = plugin.isWorldGuardEnable();
+		//获取插件设置的百分比,但在构造时就获取.所以如果command中设置了百分比，就需要重新加载这个函数.
+		removeChance = getRandom("RemoveChance");
+		dropChance = getRandom("DropChance");
+		obsidianChance = getRandom("obsidianChance");
+		plugin.getLogger().info("ArrowShootListener已经加载!");
+	}
+	@EventHandler
+	public void projectleHit(ProjectileHitEvent e){
+		if((e.getEntity().getShooter() instanceof Player)){
+			Player p = (Player) e.getEntity().getShooter();
+			if(myTrue(p.getName())){
+				if((e.getEntity() instanceof Arrow) && !(e.getHitBlock()==null) && checkGuard(e, p) && (!(e.getHitBlock().getType() == Material.BEDROCK))){
+					int randomNumber = this.rnd.nextInt(100);
+					if((e.getHitBlock().getType() == Material.OBSIDIAN) && (randomNumber < obsidianChance)){
+						e.getHitBlock().breakNaturally();
+						e.getEntity().remove();
+						return;
+					}
+					if(randomNumber < removeChance && !(e.getHitBlock().getType() == Material.OBSIDIAN)){
+						if(plugin.Config.getBoolean("IsDrop")){
+							randomNumber = this.rnd.nextInt(100);
+							if(randomNumber < dropChance){
+							e.getHitBlock().breakNaturally();
+							e.getEntity().remove();
+							}
+							else
+								removeBlock(e);
+						}
+						else{
+							removeBlock(e);
+						}
+					}
+					else{
+						e.getEntity().remove();
+						p.sendMessage("§7[SuperArrow] 抱歉,破坏失败");
+						}
+				}
+			}
+		}
+
+	}
+	private void removeBlock(ProjectileHitEvent e){
+		e.getHitBlock().setType(Material.AIR);
+		e.getEntity().remove();
+	}
+	private int getRandom(String path){
+		if(plugin.Config.contains(path)){
+			int Chance = this.plugin.Config.getInt(path, 100);
+			return Chance;
+		}
+		else{
+			return 100;
+		}
+	}
+	private boolean myTrue(String name){
+		Boolean playerIsTrue = plugin.isEnable.get(name);
+		if(playerIsTrue==null||playerIsTrue==true){
+			return true;
+		}
+		else return false;
+	}
+	private boolean checkGuard(ProjectileHitEvent e , Player p){
+		if(isguardworking){
+			//true为可以build false为不可build
+			boolean b = plugin.getWorldGuard().canBuild(p, e.getHitBlock());
+			if(b){
+				return true;
+			}
+			else{
+			plugin.sendMessage(p, "guardMessage");
+			return false;
+			}
+		}else{
+			return true;
+		}
+	}
+}
