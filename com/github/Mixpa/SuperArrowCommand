@@ -1,0 +1,94 @@
+package com.github.Mixpa;
+
+import java.util.List;
+
+import org.bukkit.ChatColor;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+
+public class SuperArrowCommand implements CommandExecutor{
+	private SuperArrowPlugin plugin;
+	public SuperArrowCommand(SuperArrowPlugin plugin){
+		this.plugin = plugin;
+	}
+	@Override
+	public boolean onCommand(CommandSender sender, Command command, java.lang.String label, java.lang.String[] args) {
+		switch (args.length) {
+		case 0:
+			handleHelp(sender);
+			break;
+		case 1:
+			switch (args[0].toLowerCase()) {
+			case "help":
+				handleHelp(sender);
+				break;
+			case "version":
+				handleVersion(sender);
+				break;
+			case "enable":
+				handleSetAble("enable", sender);
+				break;
+			case "disable":
+				handleSetAble("disable", sender);
+				break;
+			case "show":
+				handleShow(sender);
+				break;
+			default:
+				unKnowCommand(sender);
+			}
+			break;
+		default:
+			unKnowCommand(sender);
+		}
+		return true;
+	}
+	private void handleVersion(CommandSender sender){
+		if(sender.hasPermission("superarrow.version"))
+		sender.sendMessage("§bSuperArrow's version is "+plugin.getDescription().getVersion());
+		else
+			this.sendMessage((Player)sender, "noPermissionMessage");
+	}
+	private void handleHelp(CommandSender sender){
+		if(sender.hasPermission("superarrow.help")){
+			List<String> list = plugin.Message.getStringList("helpMessage");
+			for(String s : list){
+				s = ChatColor.translateAlternateColorCodes('&', s);
+				sender.sendMessage(s);
+			}
+		}
+		else{
+			this.sendMessage((Player)sender, "noPermissionMessage");
+		}
+	}
+	private void handleSetAble(String able, CommandSender sender){
+		if(sender.hasPermission("superarrow.setable")){
+			String name = sender.getName();
+			String s = ChatColor.translateAlternateColorCodes('&', plugin.Message.getString("ableMessage")+able);
+			if(able=="enable"){
+				plugin.isEnable.put(name, true);
+				sender.sendMessage(s);
+			}else{
+				plugin.isEnable.put(name, false);
+				sender.sendMessage(s);
+			}
+		}
+		else{
+			this.sendMessage(sender, "noPermissionMessage");
+		}
+	}
+	private void handleShow(CommandSender sender){
+		this.sendMessage(sender, "showChance");
+		sender.sendMessage("§b[SuperArrow]    "+plugin.Config.getInt("RemoveChance")+"§b%                "+plugin.Config.getInt("DropChance")+"§b%");
+	}
+	private void sendMessage(CommandSender sender, String path){
+		String s = ChatColor.translateAlternateColorCodes('&', plugin.Message.getString(path));
+		sender.sendMessage(s);
+	}
+	private void unKnowCommand(CommandSender sender){
+		String s = ChatColor.translateAlternateColorCodes('&', plugin.Message.getString("unKnowCommand"));
+		sender.sendMessage(s);
+	}
+}
